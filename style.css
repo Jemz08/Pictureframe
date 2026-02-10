@@ -13,7 +13,7 @@ body {
   width: 600px;
   height: 600px;
   background: url("yourphoto.jpg") center/cover no-repeat;
-  -webkit-mask-image: url("yourphoto.jpg");
+  -webkit-mask-image: url("Messenger_creation_2B1583AE-98F5-492F-AA42-D4312F034567.jpeg");
   -webkit-mask-size: cover;
   mask-image: url("yourphoto.jpg");
   mask-size: cover;
