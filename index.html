@@ -1,79 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Lyrics Portrait</title>
-  <style>
-    body {
-      background: black;
-      color: white;
-      font-family: monospace;
-      white-space: pre;
-      margin: 0;
-      padding: 20px;
-      font-size: 7px;
-      line-height: 7px;
+<meta charset="utf-8">
+<title>Lyric ASCII Portrait</title>
+<style>
+    body{
+        margin:0;
+        background:#111;
+        color:#fff;
+        font-family:monospace;
+        line-height:1;
+        overflow:hidden;
     }
-    canvas { display: none; }
-  </style>
+    #canvas{
+        display:block;
+        margin:auto;
+        image-rendering:pixelated;
+    }
+</style>
 </head>
 <body>
 
 <canvas id="canvas"></canvas>
-<pre id="output">Loading image...</pre>
 
 <script>
-const img = new Image();
-img.crossOrigin = "anonymous";
-img.src = "Messenger_creation_2B1583AE-98F5-492F-AA42-D4312F034567.jpeg";
+/* ---------- CONFIG ---------- */
+const IMG_URL   = '73312.jpg';        // ← your uploaded file (same folder or full url)
+const LYRICS    = `I've run for many miles trying to find love
+From a woman that could love me and never leave my side
+And I've run for many miles trying to get away from
+The things I'm afraid of and everything inside
+You say that we're already done (done)
+But what does that even mean?
+You tell me to open my eyes
+Thank God it was just a dream
+I guess that's how you know that it's love
+When you're scared to death they'll leave
+Just say that you'll never leave, never leave`.replace(/\s+/g,' ').trim();
 
-// 👇 PUT YOUR LYRICS HERE
-const lyrics = `
-Oh-oh, I wish you were here with me
-I know I can’t fight this feeling right now
-Lights go down and I hear voices singing in the street
-Oh-oh, I wish you were here with me
-Everything is new to me right now
-I wish you were here with me
-`.replace(/\s+/g, " "); // compress spaces
+const CHAR_W    = 120;    // characters wide (height auto-scales)
+const FONT_SIZE = 8;      // px – smaller → more detail
+const DARKNESS  = 1.2;    // >1 = darker, <1 = lighter
+/* ---------------------------- */
+
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+const img     = new Image();
+img.crossOrigin = 'anonymous';
+img.src = IMG_URL;
 
 img.onload = () => {
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
+    const aspect   = img.height / img.width;
+    const charH    = Math.round(CHAR_W * aspect);
+    canvas.width  = CHAR_W * FONT_SIZE;
+    canvas.height = charH  * FONT_SIZE;
+    ctx.drawImage(img, 0, 0, CHAR_W, charH);
+    const data = ctx.getImageData(0,0,CHAR_W,charH).data;
 
-  const width = 120;
-  const height = 120;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.font = FONT_SIZE+'px monospace';
+    ctx.textBaseline = 'top';
 
-  canvas.width = width;
-  canvas.height = height;
-  ctx.drawImage(img, 0, 0, width, height);
+    let lyricArr = LYRICS.split('');
+    let lyricPtr = 0;
 
-  const data = ctx.getImageData(0, 0, width, height).data;
-
-  let result = "";
-  let textIndex = 0;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-
-    if (brightness < 150) {
-      result += lyrics[textIndex % lyrics.length];
-      textIndex++;
-    } else {
-      result += " ";
+    for(let y=0; y<charH; y++){
+        let row = '';
+        for(let x=0; x<CHAR_W; x++){
+            const i  = (y*CHAR_W + x)*4;
+            const g  = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114)/255; // grey
+            const dens = Math.round((1-g)**DARKNESS * 9); // 0-9 density
+            let seg = '';
+            for(let k=0; k<dens; k++){
+                seg += lyricArr[lyricPtr++ % lyricArr.length];
+            }
+            row += seg.padEnd(9,' ');   // fixed 9-char cell
+        }
+        // colour cycle for extra vibe
+        ctx.fillStyle = `hsl(${y/charH*360},70%,70%)`;
+        ctx.fillText(row, 0, y*FONT_SIZE);
     }
-
-    if (((i / 4) + 1) % width === 0) result += "\n";
-  }
-
-  document.getElementById("output").textContent = result;
-};
-
-img.onerror = () => {
-  document.getElementById("output").textContent =
-    "❌ Image not found. Check filename/path: ./yourphoto.jpg";
 };
 </script>
-
 </body>
 </html>
